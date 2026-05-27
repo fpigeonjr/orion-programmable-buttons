@@ -15,7 +15,7 @@
 (async () => {
     // 1. SET UP KEY AND COMPATIBLE MODEL
     const apiKey = 'YOUR_GEMINI_API_KEY'; // Paste your key here
-    const model = 'gemini-2.5-flash'; // Google's premier, fast, and covered model
+    const model = 'gemini-3.1-flash-lite'; // Google's premier, fast, and covered model
     
     // 2. SCRAPE WEB PAGE CONTENT
     const pageTitle = document.title;
