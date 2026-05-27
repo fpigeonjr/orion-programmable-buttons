@@ -29,12 +29,7 @@
     if (!userPrompt) return; // User cancelled
 
     // Open sidebar instantly with loading state
-    OrionInternals.setSidebarContent(`
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; color: #1c1c1e;">
-            <h3 style="margin-top: 0; color: #007AFF;">⚡ Gemini is analyzing...</h3>
-            <p style="font-size: 13px; color: #8e8e93;">Reading page: <em>${pageTitle}</em></p>
-        </div>
-    `);
+    OrionInternals.setSidebarContent(`<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; color: #1c1c1e;"><h3 style="margin-top: 0; color: #007AFF;">⚡ Gemini is analyzing...</h3><p style="font-size: 13px; color: #8e8e93;">Reading page: <em>${pageTitle}</em></p></div>`);
 
     // 4. CONSTRUCT BODY COMPATIBLE WITH OPENAI FORMAT
     const requestBody = {
@@ -95,18 +90,7 @@
                             .replace(/\n\n/g, '<p style="margin: 0 0 10px 0;"></p>')
                             .replace(/\n/g, '<br>');
 
-                        OrionInternals.setSidebarContent(`
-                            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; font-size: 14px; line-height: 1.6; color: #1c1c1e;">
-                                <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e5ea;">
-                                    <h4 style="margin: 0 0 4px 0; color: #8e8e93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">User Request</h4>
-                                    <p style="margin: 0; font-size: 13px; font-style: italic; color: #3a3a3c;">"${userPrompt}"</p>
-                                </div>
-                                <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e5ea;">
-                                    <h4 style="margin: 0 0 10px 0; color: #34c759; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gemini Helper</h4>
-                                    <div style="font-size: 14px;">${formattedHtml}</div>
-                                </div>
-                            </div>
-                        `);
+                        OrionInternals.setSidebarContent(`<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; font-size: 14px; line-height: 1.6; color: #1c1c1e;"><div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e5ea;"><h4 style="margin: 0 0 4px 0; color: #8e8e93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">User Request</h4><p style="margin: 0; font-size: 13px; font-style: italic; color: #3a3a3c;">"${userPrompt}"</p></div><div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e5ea;"><h4 style="margin: 0 0 10px 0; color: #34c759; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gemini Helper</h4><div style="font-size: 14px;">${formattedHtml}</div></div></div>`);
                     }
                 } catch (error) {
                     // Ignore JSON parsing errors for trailing/incomplete chunks
