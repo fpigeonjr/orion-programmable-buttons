@@ -12,6 +12,68 @@
  * 5. Replace 'YOUR_GEMINI_API_KEY' with your Google AI Studio key.
  */
 
+// Modular Markdown-to-HTML Compiler (Line-by-Line to prevent multiline matching collisions)
+function markdownToHtml(text) {
+    if (!text) return '';
+    
+    // Normalize newlines to standard LF
+    const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    const processedLines = [];
+    
+    for (let line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            processedLines.push('<p style="margin: 0 0 10px 0;"></p>');
+            continue;
+        }
+        
+        // 1. Escape HTML special characters
+        let l = line
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+            
+        // 2. Headings
+        let isHeading = false;
+        if (trimmed.startsWith('### ')) {
+            l = `<h3 style="margin: 15px 0 5px 0; color: #1c1c1e;">${trimmed.substring(4)}</h3>`;
+            isHeading = true;
+        } else if (trimmed.startsWith('## ')) {
+            l = `<h2 style="margin: 15px 0 5px 0; color: #1c1c1e;">${trimmed.substring(3)}</h2>`;
+            isHeading = true;
+        } else if (trimmed.startsWith('# ')) {
+            l = `<h1 style="margin: 15px 0 5px 0; color: #1c1c1e;">${trimmed.substring(2)}</h1>`;
+            isHeading = true;
+        }
+        
+        // 3. List Items
+        let isList = false;
+        if (!isHeading) {
+            const listMatch = line.match(/^(\s*[-*+]\s+)(.*)$/);
+            if (listMatch) {
+                l = `<li style="margin-left: 15px; margin-bottom: 4px;">${listMatch[2]}</li>`;
+                isList = true;
+            }
+        }
+        
+        // 4. Inline formatting (Bold, Italic, Code, Links)
+        l = l
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code style="background: #f2f2f7; padding: 2px 4px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 12px; color: #ff2d55;">$1</code>')
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: #007AFF; text-decoration: none;">$1</a>');
+            
+        // 5. Append break if it is standard text (not list, heading, or paragraph)
+        if (!isHeading && !isList) {
+            l += '<br>';
+        }
+        
+        processedLines.push(l);
+    }
+    
+    return processedLines.join('');
+}
+
 (async () => {
     // 1. SET UP KEY AND COMPATIBLE MODEL
     const apiKey = 'YOUR_GEMINI_API_KEY'; // Paste your key here
@@ -75,20 +137,7 @@
                         summary += content;
                         
                         // Clean markdown rendering for the WebKit sidebar view
-                        const formattedHtml = summary
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;')
-                            .replace(/^### (.*$)/gim, '<h3 style="margin: 15px 0 5px 0; color: #1c1c1e;">$1</h3>')
-                            .replace(/^## (.*$)/gim, '<h2 style="margin: 15px 0 5px 0; color: #1c1c1e;">$1</h2>')
-                            .replace(/^# (.*$)/gim, '<h1 style="margin: 15px 0 5px 0; color: #1c1c1e;">$1</h1>')
-                            .replace(/^\s*[-*+]\s+(.*)/gim, '<li style="margin-left: 15px; margin-bottom: 4px;">$1</li>')
-                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                            .replace(/`(.*?)`/g, '<code style="background: #f2f2f7; padding: 2px 4px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 12px; color: #ff2d55;">$1</code>')
-                            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: #007AFF; text-decoration: none;">$1</a>')
-                            .replace(/\n\n/g, '<p style="margin: 0 0 10px 0;"></p>')
-                            .replace(/\n/g, '<br>');
+                        const formattedHtml = markdownToHtml(summary);
 
                         OrionInternals.setSidebarContent(`<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; font-size: 14px; line-height: 1.6; color: #1c1c1e;"><div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e5ea;"><h4 style="margin: 0 0 4px 0; color: #8e8e93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">User Request</h4><p style="margin: 0; font-size: 13px; font-style: italic; color: #3a3a3c;">"${userPrompt}"</p></div><div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e5ea;"><h4 style="margin: 0 0 10px 0; color: #34c759; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gemini Helper</h4><div style="font-size: 14px;">${formattedHtml}</div></div></div>`);
                     }
