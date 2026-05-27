@@ -1,115 +1,104 @@
 import assert from 'assert';
 
-// Verbatim copy of the markdownToHtml compiler from src/gemini-sidebar.js
-function markdownToHtml(text) {
+// OrionInternals.setSidebarContent() on GFE treats all content as PLAIN TEXT, not HTML.
+// So we must strip ALL HTML tags and output clean, readable plain text only.
+
+function cleanText(text) {
     if (!text) return '';
     
-    // Normalize newlines to standard LF
-    const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-    const processedLines = [];
+    // Normalize newlines
+    let lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    const processed = [];
     
     for (let line of lines) {
         const trimmed = line.trim();
         if (!trimmed) {
-            processedLines.push('<p style="margin: 0 0 10px 0;"></p>');
+            processed.push('');
             continue;
         }
         
-        // 1. Escape HTML special characters
-        let l = line
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-            
-        // 2. Headings
-        let isHeading = false;
-        if (trimmed.startsWith('### ')) {
-            l = `<h3 style="margin: 15px 0 5px 0; color: #1c1c1e;">${trimmed.substring(4)}</h3>`;
-            isHeading = true;
-        } else if (trimmed.startsWith('## ')) {
-            l = `<h2 style="margin: 15px 0 5px 0; color: #1c1c1e;">${trimmed.substring(3)}</h2>`;
-            isHeading = true;
-        } else if (trimmed.startsWith('# ')) {
-            l = `<h1 style="margin: 15px 0 5px 0; color: #1c1c1e;">${trimmed.substring(2)}</h1>`;
-            isHeading = true;
-        }
+        let l = line;
         
-        // 3. List Items
-        let isList = false;
-        if (!isHeading) {
-            const listMatch = line.match(/^(\s*[-*+]\s+)(.*)$/);
-            if (listMatch) {
-                l = `<li style="margin-left: 15px; margin-bottom: 4px;">${listMatch[2]}</li>`;
-                isList = true;
-            }
-        }
+        // Step 1: Strip any HTML tags outright (e.g. from Gemini responses containing sample code)
+        l = l.replace(/<[^>]*>/g, '');
         
-        // 4. Inline formatting (Bold, Italic, Code, Links)
-        l = l
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code style="background: #f2f2f7; padding: 2px 4px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 12px; color: #ff2d55;">$1</code>')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: #007AFF; text-decoration: none;">$1</a>');
-            
-        // 5. Append break if it is standard text (not list, heading, or paragraph)
-        if (!isHeading && !isList) {
-            l += '<br>';
-        }
+        // Step 2: Strip markdown image/heading markers
+        l = l.replace(/^#+\s+/gm, '');
         
-        processedLines.push(l);
+        // Step 3: Convert markdown links [text](url) → "text (url)"
+        l = l.replace(/\[([^\]]*)\]\(([^)]*)\)/g, '$1 ($2)');
+        
+        // Step 4: Strip markdown list markers
+        l = l.replace(/^\s*[-*+]\s+/gm, '');
+        
+        // Step 5: Strip bold/italic markers
+        l = l.replace(/\*\*(.*?)\*\*/g, '$1');
+        l = l.replace(/\*(.*?)\*/g, '$1');
+        
+        // Step 6: Strip inline code backticks
+        l = l.replace(/`(.*?)`/g, '$1');
+        
+        processed.push(l);
     }
     
-    return processedLines.join('');
+    return processed.join('\n');
 }
 
-// Test Suite
+// Test Suite — ALL tests expect PLAIN TEXT output (zero HTML)
 const suite = {
-    testStandardFormatting() {
+    testNoHtmlTagsInOutput() {
         const input = "This is **bold** and *italic* text.";
-        const expected = "This is <strong>bold</strong> and <em>italic</em> text.<br>";
-        assert.strictEqual(markdownToHtml(input), expected);
+        const result = cleanText(input);
+        // Must contain NO HTML angle brackets — GFE sidebar treats everything as plain text
+        assert.ok(!result.includes('<'), `Should not contain '<', got: ${result}`);
+        assert.ok(!result.includes('>'), `Should not contain '>', got: ${result}`);
+    },
+
+    testBoldPreservesText() {
+        const input = "This is **bold** and *italic* text.";
+        const result = cleanText(input);
+        assert.ok(result.includes('bold'), 'bold text must be preserved');
+        assert.ok(result.includes('italic'), 'italic text must be preserved');
+        assert.ok(!result.includes('**'), 'bold markers must be stripped');
+        assert.ok(!result.includes('<strong>'), 'HTML tags must not appear');
     },
     
-    testHeadings() {
-        assert.strictEqual(
-            markdownToHtml("### Subheading"),
-            '<h3 style="margin: 15px 0 5px 0; color: #1c1c1e;">Subheading</h3>'
-        );
-        assert.strictEqual(
-            markdownToHtml("# Main Title"),
-            '<h1 style="margin: 15px 0 5px 0; color: #1c1c1e;">Main Title</h1>'
-        );
+    testBulletListsReadable() {
+        const input = "*   **Browsers:** Orion (daily driver)\n*   *Git* - Version control.";
+        const result = cleanText(input);
+        assert.ok(result.includes('Browsers:'), 'list item text must be preserved');
+        assert.ok(result.includes('Orion'), 'content after list marker must be preserved');
+        assert.ok(result.includes('Git'), 'italic list items must preserve content');
+        assert.ok(!result.includes('<li'), 'no HTML list tags');
+        assert.ok(!result.includes('<strong>'), 'no HTML bold tags');
+        assert.ok(!result.includes('<em>'), 'no HTML italic tags');
     },
     
-    testAsteriskBulletLists() {
-        const input = "*   **Bold Item**\n*   *Italic Item*";
-        const expected = '<li style="margin-left: 15px; margin-bottom: 4px;"><strong>Bold Item</strong></li>' +
-                         '<li style="margin-left: 15px; margin-bottom: 4px;"><em>Italic Item</em></li>';
-        assert.strictEqual(markdownToHtml(input), expected);
+    testInlineCodePreserved() {
+        const input = "Run `git pull` to update.";
+        const result = cleanText(input);
+        assert.ok(result.includes('git pull'), 'code content must be preserved');
+        assert.ok(!result.includes('<code'), 'no HTML code tags');
+        assert.ok(!result.includes('`'), 'backticks should be stripped');
     },
     
-    testDashBulletLists() {
-        const input = "-   Normal Item";
-        const expected = '<li style="margin-left: 15px; margin-bottom: 4px;">Normal Item</li>';
-        assert.strictEqual(markdownToHtml(input), expected);
+    testLinksBecomeReadable() {
+        const input = "Check [Orion](https://kagi.com/orion/) today.";
+        const result = cleanText(input);
+        assert.ok(result.includes('Orion'), 'link text must be preserved');
+        assert.ok(!result.includes('<a'), 'no HTML link tags');
     },
     
-    testHtmlEscaping() {
-        const input = "This page has a `<html>` tag and an `&` sign.";
-        const expected = 'This page has a <code style="background: #f2f2f7; padding: 2px 4px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 12px; color: #ff2d55;">&lt;html&gt;</code> tag and an <code style="background: #f2f2f7; padding: 2px 4px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 12px; color: #ff2d55;">&amp;</code> sign.<br>';
-        assert.strictEqual(markdownToHtml(input), expected);
+    testNoHtmlEntities() {
+        const input = "Use `<html>` tags in code.";
+        const result = cleanText(input);
+        assert.ok(!result.includes('&lt;'), 'no HTML entity escaping');
+        assert.ok(!result.includes('&amp;'), 'no HTML entity escaping');
+        assert.ok(!result.includes('&gt;'), 'no HTML entity escaping');
     },
     
-    testLinks() {
-        const input = "Check out [Orion](https://kagi.com/orion/).";
-        const expected = 'Check out <a href="https://kagi.com/orion/" target="_blank" style="color: #007AFF; text-decoration: none;">Orion</a>.<br>';
-        assert.strictEqual(markdownToHtml(input), expected);
-    },
-    
-    testParagraphSpacers() {
-        const input = "Para 1\n\nPara 2";
-        const expected = "Para 1<br><p style=\"margin: 0 0 10px 0;\"></p>Para 2<br>";
-        assert.strictEqual(markdownToHtml(input), expected);
+    testEmptyAndWhitespace() {
+        assert.strictEqual(cleanText(''), '');
     }
 };
 
