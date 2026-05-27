@@ -1,0 +1,11 @@
+{
+  "name": "orion-programmable-buttons",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Starter repo for Orion programmable buttons experiments and tooling.",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js"
+  }
+}
