@@ -81,11 +81,11 @@
                         
                         // Clean markdown rendering for the WebKit sidebar view
                         const formattedHtml = summary
-                            .replace(/\\*\\*(.*?)\\*\\/g, '<strong>$1</strong>')
-                            .replace(/\\*(.*?)\\*/g, '<em>$1</em>')
-                            .replace(/\\n-\\s*(.*)/g, '<li style="margin-bottom: 5px;">$1</li>')
-                            .replace(/\\n\\n/g, '<p></p>')
-                            .replace(/\\n/g, '<br>');
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                            .replace(/\n-\s*(.*)/g, '<li style="margin-bottom: 5px;">$1</li>')
+                            .replace(/\n\n/g, '<p></p>')
+                            .replace(/\n/g, '<br>');
 
                         OrionInternals.setSidebarContent(`
                             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 15px; font-size: 14px; line-height: 1.6; color: #1c1c1e;">
