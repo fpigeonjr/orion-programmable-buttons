@@ -87,11 +87,11 @@
                             .replace(/^### (.*$)/gim, '<h3 style="margin: 15px 0 5px 0; color: #1c1c1e;">$1</h3>')
                             .replace(/^## (.*$)/gim, '<h2 style="margin: 15px 0 5px 0; color: #1c1c1e;">$1</h2>')
                             .replace(/^# (.*$)/gim, '<h1 style="margin: 15px 0 5px 0; color: #1c1c1e;">$1</h1>')
+                            .replace(/^\s*[-*+]\s+(.*)/gim, '<li style="margin-left: 15px; margin-bottom: 4px;">$1</li>')
                             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                             .replace(/\*(.*?)\*/g, '<em>$1</em>')
                             .replace(/`(.*?)`/g, '<code style="background: #f2f2f7; padding: 2px 4px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 12px; color: #ff2d55;">$1</code>')
                             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: #007AFF; text-decoration: none;">$1</a>')
-                            .replace(/^\s*-\s*(.*)/gim, '<li style="margin-left: 15px; margin-bottom: 4px;">$1</li>')
                             .replace(/\n\n/g, '<p style="margin: 0 0 10px 0;"></p>')
                             .replace(/\n/g, '<br>');
 
